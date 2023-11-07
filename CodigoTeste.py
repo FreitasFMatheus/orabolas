@@ -1,5 +1,5 @@
-import pygame  # Importa a biblioteca pygame para gráficos e interação com o usuário
-import numpy as np  # Importa a biblioteca numpy para operações matemáticas
+import pygame  
+import numpy as np 
 import matplotlib.pyplot as plt
 
 # Função para carregar a trajetória da bola de um arquivo
@@ -282,7 +282,7 @@ def main():
     # Calcula a trajetória do robô, o tempo e o ponto de interceptação
     x_traj, y_traj, intercept_time, intercept_point = calculate_robo_trajectory(x_bola, y_bola, x_robo, y_robo)
 
-    # Calcula a distância do robo e da bola até o ponto de interceptação
+    # Calcula a distância do robô e da bola até o ponto de interceptação
     distances = calculate_distances(x_traj, y_traj, x_bola, y_bola)
 
     # Inicializa o pygame e configura a janela
@@ -291,9 +291,19 @@ def main():
     screen = pygame.display.set_mode(window_size)
     pygame.display.set_caption('Trajetória da Bola e do Robô')
 
-    # Definindo a escala para o campo de 51x10.5 metros para caber na janela de 1200x900 pixels
-    scale_x = window_size[0] / 51
-    scale_y = window_size[1] / 10.5
+    # Dimensões do campo de futebol em metros
+    campo_largura_m = 9
+    campo_altura_m = 6
+
+    # Define a escala para o campo de futebol
+    # Calcula a escala para que o campo de futebol caiba na janela mantendo a proporção
+    scale_x = window_size[0] / campo_largura_m
+    scale_y = window_size[1] / campo_altura_m
+    scale = min(scale_x, scale_y)  # Mantém a proporção sem distorcer
+
+    # Centraliza o campo na janela
+    offset_x = (window_size[0] - (campo_largura_m * scale)) / 2
+    offset_y = (window_size[1] - (campo_altura_m * scale)) / 2
 
     clock = pygame.time.Clock()
 
@@ -307,26 +317,29 @@ def main():
 
         max_points = min(len(x_bola), len(x_traj))
         # Armazena os pontos das trajetórias em listas
-        points_bola = [(int(x_bola[i] * scale_x), window_size[1] - int(y_bola[i] * scale_y)) for i in range(max_points)]
-        points_robo = [(int(x_traj[i] * scale_x), window_size[1] - int(y_traj[i] * scale_y)) for i in range(max_points)]
+        points_bola = [(int(x_bola[i] * scale) + offset_x, window_size[1] - (int(y_bola[i] * scale) + offset_y)) for i in range(max_points)]
+        points_robo = [(int(x_traj[i] * scale) + offset_x, window_size[1] - (int(y_traj[i] * scale) + offset_y)) for i in range(max_points)]
 
         # Desenha as trajetórias da bola e do robô
         pygame.draw.lines(screen, (0, 0, 255), False, points_bola, 7)
         pygame.draw.lines(screen, (255, 0, 0), False, points_robo, 7)
 
+        # Desenha as linhas do campo de futebol
+        campo_color = (0, 100, 0)
+        pygame.draw.rect(screen, campo_color, (offset_x, offset_y, campo_largura_m * scale, campo_altura_m * scale), 3)
+
         # Se um ponto de interceptação foi calculado, desenha um círculo nesse ponto
         if intercept_point is not None:
             # Converte as coordenadas de interceptação para a escala da janela
-            intercept_point_scaled = (int(intercept_point[0] * scale_x), window_size[1] - int(intercept_point[1] * scale_y))
+            intercept_point_scaled = (int(intercept_point[0] * scale) + offset_x, window_size[1] - (int(intercept_point[1] * scale) + offset_y))
             pygame.draw.circle(screen, (0, 255, 0), intercept_point_scaled, 10)
 
         pygame.display.flip()  # Atualiza a tela
-
         clock.tick(60)  # Limita o FPS a 60
 
     pygame.quit()
     
-    # Chame as funções de plotagem após o loop do Pygame
+    # Chama as funções de plotagem após o loop do Pygame
     plot_trajectory(x_bola, y_bola, x_traj, y_traj)
     if intercept_time is not None:
         plot_robot_ball_interception(x_traj, y_traj, x_bola, y_bola, intercept_time)
